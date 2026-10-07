@@ -66,7 +66,7 @@ export const refresh =asyncHandler(async (req,res)=>{
   if (!user || !user.refreshTokens.includes(TokenHash)){
     throw ApiError.unauthorized('Session expired sign in again');
   }
-  user.refreshTokens=user.refreshTokens.filter((t)=>t!==tokenHash);
+  user.refreshTokens=user.refreshTokens.filter((t)=>t!==TokenHash);
   const tokens =await issueTokens(user);
   res.json({...tokens,token:tokens.accessToken});
 });

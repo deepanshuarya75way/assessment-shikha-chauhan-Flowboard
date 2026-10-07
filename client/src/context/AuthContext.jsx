@@ -31,7 +31,9 @@ export function AuthProvider({ children }) {
 
   const authenticate = useCallback(async (path, payload) => {
     try {
-      const { data } = await api.post(path, payload);
+      // const { data} = await api.post(path, payload);
+      const response = await api.post(path,payload);
+      const data  =response.data ?? response;
       localStorage.setItem(TOKEN_KEY, data.accessToken);
       localStorage.setItem(REFRESH_KEY, data.refreshToken);
       setToken(data.accessToken);
