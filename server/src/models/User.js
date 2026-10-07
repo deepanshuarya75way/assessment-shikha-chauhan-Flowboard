@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: () => AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
     },
+    refreshTokens:{type:[String],default:[]},
     title: { type: String, trim: true, maxlength: 80, default: '' },
     // Boards this user has starred, independent of who owns/created them.
     starredBoards: { type: [mongoose.Schema.Types.ObjectId], ref: 'Board', default: [] },

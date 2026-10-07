@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const TOKEN_KEY = 'flowboard.token';
-
+export const REFRESH_Key='flowboard.refreshToken';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
 });
@@ -18,14 +18,41 @@ api.interceptors.request.use((config) => {
   if (socketId) config.headers['x-socket-id'] = socketId;
   return config;
 });
+let refreshPromise=null;
+async function doRefresh(){
+  const refreshToken=localStorage.getItem(REFRESH_KEY);
+  if(!refreshToken) throw new Error('no refresh token');
+  const {data}=await axios.post(`${baseURl}/auth/refresh`,{refreshtoken});
+  localStorage.setItem(TOKEN_KEY,data.accessToken);
+  localStorage.setItem(REFRESH_KEY,data.refreshToken);
+  return data.accessToken;
+
+}
 
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
-    const isAuthCall = error.config?.url?.includes('/auth/');
-    if (error.response?.status === 401 && !isAuthCall) {
-      localStorage.removeItem(TOKEN_KEY);
+  async (error) => {
+    const original=error.config;
+    const isAuthCall = original?.url?.includes('/auth/');
+    if (error.response?.status === 401 && !isAuthCall &&!original._retry) {
+      original._retry=true;
+      try{
+        refreshPromise=refreshPromise || doRefresh(); 
+      const newAcessToken=await refreshPromise;
+    refreshPromise=null;
+  original.headers.Authorization=`Bearer ${newAccessToken}`;
+return api(original) ;
+   }
+   catch {
+    refreshPromise=null;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+
+   }
+      
+
       if (window.location.pathname !== '/login') window.location.assign('/login');
+
     }
     return Promise.reject(error);
   }

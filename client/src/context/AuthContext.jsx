@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import api, { TOKEN_KEY, errorMessage } from '../lib/api.js';
+import api, { TOKEN_KEY, REFRESH_Key, errorMessage } from '../lib/api.js';
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -19,6 +19,7 @@ export function AuthProvider({ children }) {
         if (!cancelled) setUser(data.user);
       } catch {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_KEY);
         if (!cancelled) setToken(null);
       } finally {
         if (!cancelled) setBooting(false);
@@ -31,8 +32,9 @@ export function AuthProvider({ children }) {
   const authenticate = useCallback(async (path, payload) => {
     try {
       const { data } = await api.post(path, payload);
-      localStorage.setItem(TOKEN_KEY, data.token);
-      setToken(data.token);
+      localStorage.setItem(TOKEN_KEY, data.accessToken);
+      localStorage.setItem(REFRESH_KEY, data.refreshToken);
+      setToken(data.accessToken);
       setUser(data.user);
       return { ok: true };
     } catch (error) {
@@ -41,8 +43,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    try { await api.post('/auth/logout'); } catch { /* token is discarded either way */ }
-    localStorage.removeItem(TOKEN_KEY);
+    const refreshToken=localStorage.getItem(REFRESH_KEY);
+    try { await api.post('/auth/logout',{refreshToken}); } catch { /* token is discarded either way */
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_KEY);
+     }
+    // localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
   }, []);

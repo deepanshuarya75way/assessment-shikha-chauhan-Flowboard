@@ -19,5 +19,6 @@ router.post('/logout', requireAuth, ctrl.logout);
 router.get('/me', requireAuth, ctrl.me);
 router.patch('/me', requireAuth, validate({ body: ctrl.updateProfileSchema }), ctrl.updateProfile);
 router.get('/users', requireAuth, ctrl.searchUsers);
+router.post('/refresh',authLimiter,ctrl.refresh);
 
 export default router;
